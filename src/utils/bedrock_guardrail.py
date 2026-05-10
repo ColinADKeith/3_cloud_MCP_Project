@@ -31,3 +31,22 @@ def call_bedrock_with_guardrail(prompt):
         json.dump({"total_tokens": current_usage + int(usage)}, f)
         
     return response
+
+def get_embedding(text):
+    """
+    Converts text into a 1536-dimension vector using AWS Titan.
+    """
+    # Uses the AWS credentials from your environment/CLI
+    client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    
+    body = json.dumps({
+        "inputText": text
+    })
+    
+    response = client.invoke_model(
+        modelId="amazon.titan-embed-text-v1", # The 'Titan' model creates 1536-dim vectors
+        body=body
+    )
+    
+    response_body = json.loads(response.get("body").read())
+    return response_body.get("embedding")
