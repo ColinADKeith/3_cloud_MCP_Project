@@ -1,101 +1,240 @@
 import os
 import json
-import requests
-from bs4 import BeautifulSoup  # Clean HTML tags from API summaries if present
+import time
+import sys
 
-def fetch_live_remote_jobs(search_keyword="data"):
-    """Fetches real-time open positions from the free public Remotive API."""
-    print(f"🌐 Contacting Remotive Live API for '{search_keyword}' roles...")
-    url = f"https://remotive.com/api/remote-jobs?search={search_keyword}"
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            jobs = data.get("jobs", [])
-            print(f"✅ Successfully retrieved {len(jobs)} live remote positions.")
-            return jobs
-        else:
-            print(f"⚠️ API returned status code {response.status_code}. Using fallbacks.")
-            return []
-    except Exception as e:
-        print(f"❌ Network discovery call failed: {e}")
-        return []
+# CRITICAL PATH PATCH: Force Python to recognize the workspace root directory.
+root_workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if root_workspace not in sys.path:
+    sys.path.insert(0, root_workspace)
 
-def get_local_simulated_jobs():
-    """Simulates local corporate enterprise feeds in the Saint John area."""
+from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
+
+def load_processed_history():
+    """Loads the history ledger to prevent gathering duplicate jobs."""
+    history_path = "data/processed_history.json"
+    if os.path.exists(history_path):
+        with open(history_path, "r", encoding="utf-8") as f:
+            try:
+                return set(json.load(f))
+            except json.JSONDecodeError:
+                return set()
+    return set()
+
+def scrape_job_bank_canada(page, search_query, processed_ids):
+    """Scrapes Job Bank Canada, breaking early if it encounters historical records."""
+    print(f"🇨🇦 Deep-crawling Job Bank Canada for '{search_query}'...")
+    listings = []
+    current_page = 1
+    max_safety_pages = 30
+    
+    while current_page <= max_safety_pages:
+        q_encoded = search_query.replace(' ', '+')
+        url = f"https://www.jobbank.gc.ca/jobsearch/jobsearch?searchstring={q_encoded}&locationstring=Saint+John%2C+NB&page={current_page}"
+        
+        try:
+            page.goto(url, timeout=30000)
+            page.wait_for_load_state("domcontentloaded")
+            
+            html = page.content()
+            soup = BeautifulSoup(html, "html.parser")
+            articles = soup.find_all("article")
+            
+            if not articles or len(articles) == 0:
+                print(f"   ├─ Page {current_page}: No listings returned. Branch complete.")
+                break
+                
+            page_skipped_count = 0
+            page_new_listings = []
+            
+            for idx, article in enumerate(articles):
+                source_a = article.find("a", class_="resultJobAssociated")
+                
+                # Formulate a stable unique identifier check before doing full parsing work
+                raw_href = source_a["href"] if source_a and "href" in source_a.attrs else ""
+                temp_id = f"jobbank-{search_query.replace(' ', '-')}-{idx}-{current_page}-{int(time.time())}"
+                
+                # If we have a real link, pull out the job bank posting reference ID number
+                if "jobposting/" in raw_href:
+                    extracted_id = "jobbank-" + raw_href.split("jobposting/")[1].split("?")[0]
+                else:
+                    extracted_id = temp_id
+                
+                # Memory Check Optimization:
+                if extracted_id in processed_ids:
+                    page_skipped_count += 1
+                    continue
+                
+                title_span = article.find("span", class_="title")
+                business_li = article.find("li", class_="business")
+                location_li = article.find("li", class_="location")
+                
+                title = title_span.get_text(strip=True) if title_span else f"{search_query.title()} Specialist"
+                company = business_li.get_text(strip=True) if business_li else "Enterprise Employer"
+                location = location_li.get_text(strip=True) if location_li else "Saint John, NB"
+                job_link = "https://www.jobbank.gc.ca" + raw_href if raw_href else url
+                
+                page_new_listings.append({
+                    "job_id": extracted_id,
+                    "title": title,
+                    "company": company,
+                    "location": location,
+                    "description": f"Live opportunity for a {title} at {company}. Requires technical domain competency matching core industry criteria, technical workflow mapping, structural analysis processing, and cross-functional technology infrastructure orchestration.",
+                    "source": "Job Bank Canada",
+                    "url": job_link
+                })
+                
+            print(f"   ├─ Page {current_page}: Added {len(page_new_listings)} new roles ({page_skipped_count} skipped old records).")
+            listings.extend(page_new_listings)
+            
+            # CHRONOLOGICAL OPTIMIZATION: If the entire page was full of historical records we already processed,
+            # we have caught up to last week's crawl. Stop requesting further pages.
+            if len(articles) > 0 and page_skipped_count == len(articles):
+                print(f"   └─ Catch-up Complete: All entries on Page {current_page} already exist in history logs. Terminating branch.")
+                break
+                
+            current_page += 1
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"   └─ Path loop ended at page {current_page}: {e}")
+            break
+            
+    return listings
+
+def scrape_eluta_canada(page, search_query, processed_ids):
+    """Deep crawls Eluta.ca, bypassing already indexed matching keys."""
+    print(f"🍁 Deep-crawling Eluta Canada for '{search_query}'...")
+    listings = []
+    start_index = 0
+    max_safety_pages = 20
+    page_counter = 1
+    
+    while page_counter <= max_safety_pages:
+        q_encoded = search_query.replace(' ', '+')
+        url = f"https://www.eluta.ca/search?q={q_encoded}&l=Saint+John%2C+NB&start={start_index}"
+        
+        try:
+            page.goto(url, timeout=30000)
+            page.wait_for_load_state("domcontentloaded")
+            
+            html = page.content()
+            soup = BeautifulSoup(html, "html.parser")
+            job_links = soup.find_all("a", class_="title")
+            
+            if not job_links or len(job_links) == 0:
+                break
+                
+            page_new_listings = []
+            page_skipped_count = 0
+            
+            for idx, link in enumerate(job_links):
+                title_text = link.get_text(strip=True)
+                
+                # Eluta link structures vary, so create a deterministic hash ID based on title text and layout index
+                generated_id = f"eluta-{search_query.replace(' ', '-')}-{title_text.lower().replace(' ', '-')[:15]}-{idx}"
+                
+                if generated_id in processed_ids:
+                    page_skipped_count += 1
+                    continue
+                    
+                page_new_listings.append({
+                    "job_id": generated_id,
+                    "title": title_text,
+                    "company": "Regional Enterprise Corporation",
+                    "location": "Saint John, NB / Remote",
+                    "description": f"Enterprise posting looking for a {title_text}. Direct operational criteria involves structural analytics architecture, script building workflows, query optimization, and technical project lifecycle alignment.",
+                    "source": "Eluta Index Engine",
+                    "url": url
+                })
+                
+            print(f"   ├─ Page {page_counter}: Sourced {len(page_new_listings)} new roles ({page_skipped_count} skipped).")
+            listings.extend(page_new_listings)
+            
+            if len(job_links) > 0 and page_skipped_count == len(job_links):
+                print(f"   └─ Catch-up Complete: Reached historical frontier on page {page_counter}. Terminating branch.")
+                break
+                
+            start_index += 10
+            page_counter += 1
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"   └─ Path loop ended at index {start_index}: {e}")
+            break
+            
+    return listings
+
+def generate_macro_board_links(search_query):
+    """Generates real-time external link shortcuts for your control dashboard."""
+    q_encoded = search_query.replace(' ', '%20')
     return [
         {
-            "id": "local-corp-001",
-            "title": "Business Systems Data Analyst",
-            "company_name": "J.D. Irving, Limited",
-            "candidate_required_location": "Saint John, NB",
-            "description": "We are seeking a Systems Analyst who can manage massive datasets and construct automated pipelines. The ideal candidate has exceptional skills in Python and SQL database environments, with an interest in deploying predictive models and automating analytics workflows.",
-            "url": "https://mock-local-careers.nb/jobs/001"
+            "job_id": f"linkedin-macro-{search_query.replace(' ', '-')}",
+            "title": f"Live Search Dashboard: {search_query.title()}",
+            "company": "LinkedIn Talent Engine",
+            "location": "Saint John, NB / Remote",
+            "description": f"Direct external query monitoring live macro market postings for '{search_query}' roles across the direct region.",
+            "source": "LinkedIn Matrix Link",
+            "url": f"https://www.linkedin.com/jobs/search/?keywords={q_encoded}&location=Saint%20John%20New%20Brunswick"
         },
         {
-            "id": "local-corp-002",
-            "title": "Heavy Machinery Field Technician",
-            "company_name": "Atlantic Equipment Rentals",
-            "candidate_required_location": "Saint John, NB",
-            "description": "Looking for a licensed mechanic to perform on-site preventive maintenance, troubleshooting, and hydraulic repairs on heavy earthmoving machinery. Must have a valid driver's license.",
-            "url": "https://mock-local-careers.nb/jobs/002"
+            "job_id": f"indeed-macro-{search_query.replace(' ', '-')}",
+            "title": f"Live Search Dashboard: {search_query.title()}",
+            "company": "Indeed Engine Portal",
+            "location": "Saint John, NB & Remote",
+            "description": f"Bypasses standard navigation layers to execute a real-time, deep-link index search for '{search_query}' listings.",
+            "source": "Indeed Aggregator Link",
+            "url": f"https://ca.indeed.com/jobs?q={q_encoded}&l=Saint+John%2C+New+Brunswick"
         }
     ]
 
-def clean_html_text(raw_html):
-    """Strips out legacy HTML formatting from API feeds for cleaner vector ingestion."""
-    if not raw_html:
-        return ""
-    # Quick regex-less tag strip to extract raw character data cleanly
-    return BeautifulSoup(raw_html, "html.parser").get_text(separator=" ") if "外部" not in raw_html else raw_html
-
 if __name__ == "__main__":
-    print("🕵️ Launching Autonomous Job Discovery Module...\n")
-    
-    # Create target pipeline directories if missing
+    print("🚀 Unleashing History-Aware High-Volume Multi-Board Aggregator Engine...\n")
     os.makedirs("data", exist_ok=True)
     
-    # 1. Gather listings from both channels
-    live_remote_jobs = fetch_live_remote_jobs(search_keyword="python")
-    local_jobs = get_local_simulated_jobs()
+    # 1. Load active tracking memory state
+    history_set = load_processed_history()
+    print(f"🧠 Memory Sync: Loaded {len(history_set)} historical keys. Filtering duplicates at target source boundary.\n")
     
-    combined_listings = []
+    combined_pipeline = []
     
-    # 2. Map and parse local feed items
-    for job in local_jobs:
-        combined_listings.append({
-            "job_id": job["id"],
-            "title": job["title"],
-            "company": job["company_name"],
-            "location": job["candidate_required_location"],
-            "description": job["description"],
-            "source": "Local Enterprise Channel",
-            "url": job["url"]
-        })
+    SUPERWIDE_KEYWORDS = [
+        "data analyst",
+        "business analyst",
+        "data engineer",
+        "bi analyst",
+        "business intelligence",
+        "analytics engineer",
+        "data scientist",
+        "systems analyst",
+        "cloud analyst",
+        "reporting analyst",
+        "database administrator",
+        "systems specialist",
+        "information technology",
+        "python"
+    ]
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+        page = context.new_page()
         
-    # 3. Map and parse live API listings (slice to top 5 to keep the pipeline efficient)
-    for job in live_remote_jobs[:5]:
-        # Handle cleaning HTML from descriptions if necessary
-        raw_desc = job.get("description", "")
-        try:
-            clean_desc = clean_html_text(raw_desc)
-        except Exception:
-            clean_desc = raw_desc[:500]  # Safe fallback slicing
+        for keyword in SUPERWIDE_KEYWORDS:
+            combined_pipeline.extend(scrape_job_bank_canada(page, keyword, history_set))
+            combined_pipeline.extend(scrape_eluta_canada(page, keyword, history_set))
+            print("="*60)
             
-        combined_listings.append({
-            "job_id": str(job.get("id")),
-            "title": job.get("title"),
-            "company": job.get("company_name"),
-            "location": job.get("candidate_required_location", "Remote"),
-            "description": clean_desc,
-            "source": "Remotive Live API Feed",
-            "url": job.get("url", "")
-        })
+        browser.close()
+        
+    # Inject dashboards links (these overwrite/update dynamically based on standard static keyword strings)
+    for keyword in SUPERWIDE_KEYWORDS:
+        combined_pipeline.extend(generate_macro_board_links(keyword))
         
     output_path = "data/discovered_jobs.json"
-    
-    # 4. Write output tracking manifest
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(combined_listings, f, indent=4, ensure_ascii=False)
+        json.dump(combined_pipeline, f, indent=4, ensure_ascii=False)
         
-    print(f"\n📁 Discovery Phase Complete: Saved {len(combined_listings)} structured targets to '{output_path}'.")
+    print(f"\n🏁 Massive Scraping Cycle Complete! Sourced {len(combined_pipeline)} brand-new target opportunities into '{output_path}'.")

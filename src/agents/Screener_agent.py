@@ -1,4 +1,11 @@
 import os
+import sys
+
+# CRITICAL PATH PATCH: Force Python to recognize the workspace root directory.
+root_workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if root_workspace not in sys.path:
+    sys.path.insert(0, root_workspace)
+
 import json
 import array
 import oracledb
@@ -6,8 +13,6 @@ from dotenv import load_dotenv
 from src.utils.bedrock_guardrail import get_embedding
 
 load_dotenv()
-
-# Ensure Oracle fetches CLOBs/JSON text immediately as standard strings
 oracledb.defaults.fetch_lobs = False
 
 def get_closest_resume_match(job_description_vector):
@@ -22,7 +27,6 @@ def get_closest_resume_match(job_description_vector):
     )
     cursor = conn.cursor()
     
-    # Select content and calculate the exact Cosine distance
     sql = """
         SELECT content, VECTOR_DISTANCE(embedding, :1, COSINE) as dist
         FROM resume_vectors 
@@ -38,59 +42,89 @@ def get_closest_resume_match(job_description_vector):
     conn.close()
     return row if row else (None, 2.0)
 
+def load_json_file(file_path, default_value):
+    """Safely utility to load JSON files without crashing if they don't exist yet."""
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return default_value
+    return default_value
+
 def screen_discovered_jobs():
     input_path = "data/discovered_jobs.json"
     output_path = "data/qualified_jobs.json"
+    history_path = "data/processed_history.json"
     
     if not os.path.exists(input_path):
         print(f"❌ Error: Missing '{input_path}'. Run discovery first!")
         return
         
-    with open(input_path, "r", encoding="utf-8") as f:
-        jobs = json.load(f)
-        
-    print(f"🕵️ Automated Screener inspecting {len(jobs)} targets against your Oracle vector profile...\n")
+    # 1. Load existing historical states to maintain persistent memory
+    raw_discovered = load_json_file(input_path, [])
+    existing_qualified = load_json_file(output_path, [])
+    historical_ledger = load_json_file(history_path, [])
     
-    qualified_pipeline = []
+    # Convert history array to a set for O(1) lightning-fast lookup performance
+    processed_ids = set(historical_ledger)
     
-    # Semantic Threshold: Cosine distance ranges from 0 (identical) to 2 (opposite).
-    # A distance under 0.55 indicates a strong conceptual overlap with your skills.
+    # Filter down to completely unseen jobs before touching any cloud APIs
+    fresh_unseen_jobs = [j for j in raw_discovered if j.get("job_id") not in processed_ids]
+    
+    skipped_count = len(raw_discovered) - len(fresh_unseen_jobs)
+    print(f"🧠 Persistent Memory: Identified {skipped_count} previously processed jobs. Skipping to prevent API duplication.")
+    print(f"🕵️ Screen Agent inspecting {len(fresh_unseen_jobs)} brand-new targets against your vector profile...\n")
+    
+    if not fresh_unseen_jobs:
+        print("📭 No new unique listings to evaluate this cycle.")
+        return
+
+    new_qualified_matches = []
     MATCH_THRESHOLD = 0.55
     
-    for job in jobs:
+    for job in fresh_unseen_jobs:
         title = job.get("title")
         company = job.get("company")
         desc = job.get("description", "")
+        job_id = job.get("job_id")
         
-        # 1. Vectorize the job requirements using AWS Bedrock Titan
         try:
-            # We look at the first 1000 characters of the description to grab core requirements
+            # Step A: Generate embedding vector via AWS Titan
             job_vector = get_embedding(desc[:1000])
             
-            # 2. Measure the distance against your resume in Oracle 23ai
+            # Step B: Compute semantic proximity match inside Oracle 23ai
             best_chunk, distance_score = get_closest_resume_match(job_vector)
             
-            # 3. Evaluate matching criteria
             is_match = distance_score <= MATCH_THRESHOLD
-            status_icon = "✅ [MATCH]" if is_match else "❌ [SKIP]"
+            status_icon = "✅ [NEW MATCH]" if is_match else "❌ [NEW SKIP]"
             
             print(f"{status_icon} '{title}' at {company}")
             print(f"   ├─ Semantic Distance: {distance_score:.4f}")
+            
             if is_match:
-                print(f"   └─ Closest Match: {best_chunk[:75]}...")
-                # Append matching score to tracking data
                 job["semantic_distance"] = distance_score
-                qualified_pipeline.append(job)
+                new_qualified_matches.append(job)
+                
+            # Log this ID immediately into our memory state so it is never analyzed again
+            historical_ledger.append(job_id)
             print("-" * 70)
             
         except Exception as e:
             print(f"⚠️ Failed to screen '{title}': {e}")
             
-    # 4. Save the qualified pipeline target manifest
+    # 2. Append new matches onto your cumulative qualified pipeline list
+    cumulative_qualified = existing_qualified + new_qualified_matches
+    
+    # 3. Write updated database structures back to storage manifests
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(qualified_pipeline, f, indent=4, ensure_ascii=False)
+        json.dump(cumulative_qualified, f, indent=4, ensure_ascii=False)
         
-    print(f"\n🎯 Screening complete! Saved {len(qualified_pipeline)} qualified targets to '{output_path}'.")
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(historical_ledger, f, indent=4, ensure_ascii=False)
+        
+    print(f"\n🎯 Screening complete! Appended {len(new_qualified_matches)} new matches.")
+    print(f"📁 Cumulative tracking pipeline now holds {len(cumulative_qualified)} deduplicated records.")
 
 if __name__ == "__main__":
     screen_discovered_jobs()
