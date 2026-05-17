@@ -1,0 +1,14 @@
+Dear Hiring Manager,
+
+I am writing to express my strong interest in the [POSITION] with [COMPANY NAME]. With a Master of Arts in Economics from Dalhousie University and specialized technical training in advanced analytics at NBCC, I offer a unique combination of high-level economic modeling and hands-on data engineering.
+
+During my tenure as an Assurance Staff at EY, I managed complex financial datasets, reviewed and tested financial transactions, and assured the accuracy of financial statements. This role taught me how to translate raw financial figures into reliable documentation, establishing a strong foundation in data integrity and professional reporting.
+
+Building on this experience, my recent Capstone Project with Moosehead allowed me to apply advanced analytics to real-world business challenges. Throughout this project, I managed the end-to-end data lifecycle—from rigorous data preparation and statistical modeling in Jupyter Notebooks to delivering interactive visualizations and actionable reports in Power BI. This collaboration provided me with direct experience in using data to drive decision-making for a major industry leader.
+
+My experience at RBC further refined my ability to bridge the gap between technical systems and stakeholder needs. By navigating complex financial systems for clients and explaining their options in plain language, I developed a "client-first" approach to problem-solving. This experience, combined with my ability to collaborate across global time zones, allows me to thrive in the dynamic, fast-paced environments.
+
+Thank you for your time and consideration. I look forward to the possibility of discussing how my analytical background and my work with Moosehead can support your company’s goals.
+
+Best regards,
+Colin Keith
