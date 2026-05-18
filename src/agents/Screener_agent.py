@@ -61,15 +61,11 @@ def screen_discovered_jobs():
         print(f"❌ Error: Missing '{input_path}'. Run discovery first!")
         return
         
-    # 1. Load existing historical states to maintain persistent memory
     raw_discovered = load_json_file(input_path, [])
     existing_qualified = load_json_file(output_path, [])
     historical_ledger = load_json_file(history_path, [])
     
-    # Convert history array to a set for O(1) lightning-fast lookup performance
     processed_ids = set(historical_ledger)
-    
-    # Filter down to completely unseen jobs before touching any cloud APIs
     fresh_unseen_jobs = [j for j in raw_discovered if j.get("job_id") not in processed_ids]
     
     skipped_count = len(raw_discovered) - len(fresh_unseen_jobs)
@@ -90,10 +86,7 @@ def screen_discovered_jobs():
         job_id = job.get("job_id")
         
         try:
-            # Step A: Generate embedding vector via AWS Titan
             job_vector = get_embedding(desc[:1000])
-            
-            # Step B: Compute semantic proximity match inside Oracle 23ai
             best_chunk, distance_score = get_closest_resume_match(job_vector)
             
             is_match = distance_score <= MATCH_THRESHOLD
@@ -106,17 +99,14 @@ def screen_discovered_jobs():
                 job["semantic_distance"] = distance_score
                 new_qualified_matches.append(job)
                 
-            # Log this ID immediately into our memory state so it is never analyzed again
             historical_ledger.append(job_id)
             print("-" * 70)
             
         except Exception as e:
             print(f"⚠️ Failed to screen '{title}': {e}")
             
-    # 2. Append new matches onto your cumulative qualified pipeline list
     cumulative_qualified = existing_qualified + new_qualified_matches
     
-    # 3. Write updated database structures back to storage manifests
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(cumulative_qualified, f, indent=4, ensure_ascii=False)
         

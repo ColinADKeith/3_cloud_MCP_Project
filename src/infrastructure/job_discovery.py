@@ -3,6 +3,7 @@ import json
 import time
 import sys
 import hashlib
+import datetime
 
 # CRITICAL PATH PATCH: Force Python to recognize the workspace root directory.
 root_workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -13,10 +14,7 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
 def create_stable_id(source_prefix, title, company, location):
-    """
-    Generates a perfectly stable, deterministic unique identifier based on 
-    the core attributes of a posting. Eliminates index and timestamp volatility.
-    """
+    """Generates a stable, deterministic unique identifier to prevent duplicate tracking."""
     raw_anchor = f"{source_prefix}-{title}-{company}-{location}".lower().strip()
     clean_anchor = "".join(c for c in raw_anchor if c.isalnum())
     return f"{source_prefix}-{hashlib.md5(clean_anchor.encode('utf-8')).hexdigest()[:16]}"
@@ -38,6 +36,7 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
     listings = []
     current_page = 1
     max_safety_pages = 30
+    current_date = datetime.date.today().strftime("%Y-%m-%d")
     
     while current_page <= max_safety_pages:
         q_encoded = search_query.replace(' ', '+')
@@ -59,12 +58,7 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
             page_new_listings = []
             
             for idx, article in enumerate(articles):
-                # 🎯 TARGET TRACKING CORRECTION: Find the actual title link tag
                 title_span = article.find("span", class_="title")
-                
-                # Job Bank nests the real '<a>' tag either right around or inside the title structure
-                link_tag = article.find("a", class_="resultJobItem") or article.find("a")
-                
                 business_li = article.find("li", class_="business")
                 location_li = article.find("li", class_="location")
                 
@@ -72,23 +66,16 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
                 company = business_li.get_text(strip=True) if business_li else "Enterprise Employer"
                 location = location_li.get_text(strip=True) if location_li else "Saint John, NB"
                 
-                # 🚀 SPECIFIC LINK EXTRACTION: Build the real deep link to the posting
-                if link_tag and "href" in link_tag.attrs:
-                    raw_href = link_tag["href"]
-                    # Clean up relative paths if necessary
-                    if raw_href.startswith("/"):
-                        job_link = "https://www.jobbank.gc.ca" + raw_href
-                    elif not raw_href.startswith("http"):
-                        job_link = "https://www.jobbank.gc.ca/jobsearch/" + raw_href
-                    else:
-                        job_link = raw_href
-                else:
-                    job_link = url
+                # 🎯 BULLETPROOF LINK SELECTION: Find the link that explicitly points to a job posting page
+                job_link = url
+                for a_tag in article.find_all("a"):
+                    if a_tag.has_attr("href") and "/jobposting/" in a_tag["href"]:
+                        raw_href = a_tag["href"]
+                        job_link = "https://www.jobbank.gc.ca" + raw_href if raw_href.startswith("/") else raw_href
+                        break
                 
-                # Generate stable semantic fingerprint ID
                 extracted_id = create_stable_id("jobbank", title, company, location)
                 
-                # Memory Check Optimization
                 if extracted_id in processed_ids:
                     page_skipped_count += 1
                     continue
@@ -100,7 +87,8 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
                     "location": location,
                     "description": f"Live opportunity for a {title} at {company}. Requires technical domain competency matching core industry criteria, technical workflow mapping, structural analysis processing, and cross-functional technology infrastructure orchestration.",
                     "source": "Job Bank Canada",
-                    "url": job_link # Now populated with the specific /jobposting/ address!
+                    "url": job_link,
+                    "date_added": current_date
                 })
                 
             print(f"   ├─ Page {current_page}: Added {len(page_new_listings)} new roles ({page_skipped_count} skipped old records).")
@@ -119,12 +107,13 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
     return listings
 
 def scrape_eluta_canada(page, search_query, processed_ids):
-    """Deep crawls Eluta.ca, bypassing already indexed matching keys."""
+    """Deep crawls Eluta.ca by tracking stable /spl/ posting URLs to bypass changed class layouts."""
     print(f"🍁 Deep-crawling Eluta Canada for '{search_query}'...")
     listings = []
     start_index = 0
     max_safety_pages = 20
     page_counter = 1
+    current_date = datetime.date.today().strftime("%Y-%m-%d")
     
     while page_counter <= max_safety_pages:
         q_encoded = search_query.replace(' ', '+')
@@ -132,11 +121,17 @@ def scrape_eluta_canada(page, search_query, processed_ids):
         
         try:
             page.goto(url, timeout=30000)
-            page.wait_for_load_state("domcontentloaded")
+            page.wait_for_timeout(1500) # Give client-side containers a brief moment to stabilize
             
             html = page.content()
             soup = BeautifulSoup(html, "html.parser")
-            job_links = soup.find_all("a", class_="title")
+            
+            # 🎯 BULLETPROOF ELUTA FIX: Isolate all unique links that point to specific posting paths (/spl/)
+            job_links = []
+            for a in soup.find_all("a"):
+                if a.has_attr("href") and "/spl/" in a["href"]:
+                    if a["href"] not in [link["href"] for link in job_links]:
+                        job_links.append(a)
             
             if not job_links or len(job_links) == 0:
                 break
@@ -146,6 +141,13 @@ def scrape_eluta_canada(page, search_query, processed_ids):
             
             for idx, link in enumerate(job_links):
                 title_text = link.get_text(strip=True)
+                if not title_text or len(title_text) < 3:
+                    title_text = f"{search_query.title()} Professional"
+                    
+                full_job_url = link["href"]
+                if full_job_url.startswith("/"):
+                    full_job_url = "https://www.eluta.ca" + full_job_url
+                
                 generated_id = create_stable_id("eluta", title_text, "Regional Enterprise Corporation", "Saint John, NB")
                 
                 if generated_id in processed_ids:
@@ -159,7 +161,8 @@ def scrape_eluta_canada(page, search_query, processed_ids):
                     "location": "Saint John, NB / Remote",
                     "description": f"Enterprise posting looking for a {title_text}. Direct operational criteria involves structural analytics architecture, script building workflows, query optimization, and technical project lifecycle alignment.",
                     "source": "Eluta Index Engine",
-                    "url": url
+                    "url": full_job_url,
+                    "date_added": current_date
                 })
                 
             print(f"   ├─ Page {page_counter}: Sourced {len(page_new_listings)} new roles ({page_skipped_count} skipped).")
@@ -179,8 +182,9 @@ def scrape_eluta_canada(page, search_query, processed_ids):
     return listings
 
 def generate_macro_board_links(search_query):
-    """Generates real-time external link shortcuts for your control dashboard."""
+    """Generates real-time dashboard macro shortcuts."""
     q_encoded = search_query.replace(' ', '%20')
+    current_date = datetime.date.today().strftime("%Y-%m-%d")
     return [
         {
             "job_id": f"linkedin-macro-{search_query.replace(' ', '-')}",
@@ -189,7 +193,8 @@ def generate_macro_board_links(search_query):
             "location": "Saint John, NB / Remote",
             "description": f"Direct external query monitoring live macro market postings for '{search_query}' roles across the direct region.",
             "source": "LinkedIn Matrix Link",
-            "url": f"https://www.linkedin.com/jobs/search/?keywords={q_encoded}&location=Saint%20John%20New%20Brunswick"
+            "url": f"https://www.linkedin.com/jobs/search/?keywords={q_encoded}&location=Saint%20John%20New%20Brunswick",
+            "date_added": current_date
         },
         {
             "job_id": f"indeed-macro-{search_query.replace(' ', '-')}",
@@ -198,12 +203,13 @@ def generate_macro_board_links(search_query):
             "location": "Saint John, NB & Remote",
             "description": f"Bypasses standard navigation layers to execute a real-time, deep-link index search for '{search_query}' listings.",
             "source": "Indeed Aggregator Link",
-            "url": f"https://ca.indeed.com/jobs?q={q_encoded}&l=Saint+John%2C+New+Brunswick"
+            "url": f"https://ca.indeed.com/jobs?q={q_encoded}&l=Saint+John%2C+New+Brunswick",
+            "date_added": current_date
         }
     ]
 
 if __name__ == "__main__":
-    print("🚀 Unleashing History-Aware High-Volume Multi-Board Aggregator Engine...\n")
+    print("🚀 Unleashing Layout-Hardened High-Volume Multi-Board Aggregator Engine...\n")
     os.makedirs("data", exist_ok=True)
     
     history_set = load_processed_history()
@@ -212,20 +218,10 @@ if __name__ == "__main__":
     combined_pipeline = []
     
     SUPERWIDE_KEYWORDS = [
-        "data analyst",
-        "business analyst",
-        "data engineer",
-        "bi analyst",
-        "business intelligence",
-        "analytics engineer",
-        "data scientist",
-        "systems analyst",
-        "cloud analyst",
-        "reporting analyst",
-        "database administrator",
-        "systems specialist",
-        "information technology",
-        "python"
+        "data analyst", "business analyst", "data engineer", "bi analyst",
+        "business intelligence", "analytics engineer", "data scientist",
+        "systems analyst", "cloud analyst", "reporting analyst",
+        "database administrator", "systems specialist", "information technology", "python"
     ]
     
     with sync_playwright() as p:
