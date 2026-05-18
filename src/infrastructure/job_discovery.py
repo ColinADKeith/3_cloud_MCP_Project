@@ -2,6 +2,7 @@ import os
 import json
 import time
 import sys
+import hashlib
 
 # CRITICAL PATH PATCH: Force Python to recognize the workspace root directory.
 root_workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,6 +11,17 @@ if root_workspace not in sys.path:
 
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+
+def create_stable_id(source_prefix, title, company, location):
+    """
+    Generates a perfectly stable, deterministic unique identifier based on 
+    the core attributes of a posting. Eliminates index and timestamp volatility.
+    """
+    raw_anchor = f"{source_prefix}-{title}-{company}-{location}".lower().strip()
+    # Remove non-alphanumeric characters to maintain layout safety
+    clean_anchor = "".join(c for c in raw_anchor if c.isalnum())
+    # Create a deterministic 16-character MD5 hash slice
+    return f"{source_prefix}-{hashlib.md5(clean_anchor.encode('utf-8')).hexdigest()[:16]}"
 
 def load_processed_history():
     """Loads the history ledger to prevent gathering duplicate jobs."""
@@ -49,31 +61,23 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
             page_new_listings = []
             
             for idx, article in enumerate(articles):
-                source_a = article.find("a", class_="resultJobAssociated")
-                
-                # Formulate a stable unique identifier check before doing full parsing work
-                raw_href = source_a["href"] if source_a and "href" in source_a.attrs else ""
-                temp_id = f"jobbank-{search_query.replace(' ', '-')}-{idx}-{current_page}-{int(time.time())}"
-                
-                # If we have a real link, pull out the job bank posting reference ID number
-                if "jobposting/" in raw_href:
-                    extracted_id = "jobbank-" + raw_href.split("jobposting/")[1].split("?")[0]
-                else:
-                    extracted_id = temp_id
-                
-                # Memory Check Optimization:
-                if extracted_id in processed_ids:
-                    page_skipped_count += 1
-                    continue
-                
                 title_span = article.find("span", class_="title")
                 business_li = article.find("li", class_="business")
                 location_li = article.find("li", class_="location")
+                source_a = article.find("a", class_="resultJobAssociated")
                 
                 title = title_span.get_text(strip=True) if title_span else f"{search_query.title()} Specialist"
                 company = business_li.get_text(strip=True) if business_li else "Enterprise Employer"
                 location = location_li.get_text(strip=True) if location_li else "Saint John, NB"
-                job_link = "https://www.jobbank.gc.ca" + raw_href if raw_href else url
+                job_link = "https://www.jobbank.gc.ca" + source_a["href"] if source_a and "href" in source_a.attrs else url
+                
+                # Generate an unshakeable semantic fingerprint ID
+                extracted_id = create_stable_id("jobbank", title, company, location)
+                
+                # Memory Check Optimization
+                if extracted_id in processed_ids:
+                    page_skipped_count += 1
+                    continue
                 
                 page_new_listings.append({
                     "job_id": extracted_id,
@@ -88,14 +92,13 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
             print(f"   ├─ Page {current_page}: Added {len(page_new_listings)} new roles ({page_skipped_count} skipped old records).")
             listings.extend(page_new_listings)
             
-            # CHRONOLOGICAL OPTIMIZATION: If the entire page was full of historical records we already processed,
-            # we have caught up to last week's crawl. Stop requesting further pages.
+            # CHRONOLOGICAL OPTIMIZATION: If every listing on this page is an old record, stop paginating
             if len(articles) > 0 and page_skipped_count == len(articles):
                 print(f"   └─ Catch-up Complete: All entries on Page {current_page} already exist in history logs. Terminating branch.")
                 break
                 
             current_page += 1
-            time.sleep(0.5)
+            time.sleep(0.3)
         except Exception as e:
             print(f"   └─ Path loop ended at page {current_page}: {e}")
             break
@@ -131,8 +134,8 @@ def scrape_eluta_canada(page, search_query, processed_ids):
             for idx, link in enumerate(job_links):
                 title_text = link.get_text(strip=True)
                 
-                # Eluta link structures vary, so create a deterministic hash ID based on title text and layout index
-                generated_id = f"eluta-{search_query.replace(' ', '-')}-{title_text.lower().replace(' ', '-')[:15]}-{idx}"
+                # Generate stable fingerprint for Eluta index nodes
+                generated_id = create_stable_id("eluta", title_text, "Regional Enterprise Corporation", "Saint John, NB")
                 
                 if generated_id in processed_ids:
                     page_skipped_count += 1
@@ -157,7 +160,7 @@ def scrape_eluta_canada(page, search_query, processed_ids):
                 
             start_index += 10
             page_counter += 1
-            time.sleep(0.5)
+            time.sleep(0.3)
         except Exception as e:
             print(f"   └─ Path loop ended at index {start_index}: {e}")
             break
@@ -192,7 +195,6 @@ if __name__ == "__main__":
     print("🚀 Unleashing History-Aware High-Volume Multi-Board Aggregator Engine...\n")
     os.makedirs("data", exist_ok=True)
     
-    # 1. Load active tracking memory state
     history_set = load_processed_history()
     print(f"🧠 Memory Sync: Loaded {len(history_set)} historical keys. Filtering duplicates at target source boundary.\n")
     
@@ -229,7 +231,6 @@ if __name__ == "__main__":
             
         browser.close()
         
-    # Inject dashboards links (these overwrite/update dynamically based on standard static keyword strings)
     for keyword in SUPERWIDE_KEYWORDS:
         combined_pipeline.extend(generate_macro_board_links(keyword))
         
