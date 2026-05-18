@@ -18,9 +18,7 @@ def create_stable_id(source_prefix, title, company, location):
     the core attributes of a posting. Eliminates index and timestamp volatility.
     """
     raw_anchor = f"{source_prefix}-{title}-{company}-{location}".lower().strip()
-    # Remove non-alphanumeric characters to maintain layout safety
     clean_anchor = "".join(c for c in raw_anchor if c.isalnum())
-    # Create a deterministic 16-character MD5 hash slice
     return f"{source_prefix}-{hashlib.md5(clean_anchor.encode('utf-8')).hexdigest()[:16]}"
 
 def load_processed_history():
@@ -61,17 +59,33 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
             page_new_listings = []
             
             for idx, article in enumerate(articles):
+                # 🎯 TARGET TRACKING CORRECTION: Find the actual title link tag
                 title_span = article.find("span", class_="title")
+                
+                # Job Bank nests the real '<a>' tag either right around or inside the title structure
+                link_tag = article.find("a", class_="resultJobItem") or article.find("a")
+                
                 business_li = article.find("li", class_="business")
                 location_li = article.find("li", class_="location")
-                source_a = article.find("a", class_="resultJobAssociated")
                 
                 title = title_span.get_text(strip=True) if title_span else f"{search_query.title()} Specialist"
                 company = business_li.get_text(strip=True) if business_li else "Enterprise Employer"
                 location = location_li.get_text(strip=True) if location_li else "Saint John, NB"
-                job_link = "https://www.jobbank.gc.ca" + source_a["href"] if source_a and "href" in source_a.attrs else url
                 
-                # Generate an unshakeable semantic fingerprint ID
+                # 🚀 SPECIFIC LINK EXTRACTION: Build the real deep link to the posting
+                if link_tag and "href" in link_tag.attrs:
+                    raw_href = link_tag["href"]
+                    # Clean up relative paths if necessary
+                    if raw_href.startswith("/"):
+                        job_link = "https://www.jobbank.gc.ca" + raw_href
+                    elif not raw_href.startswith("http"):
+                        job_link = "https://www.jobbank.gc.ca/jobsearch/" + raw_href
+                    else:
+                        job_link = raw_href
+                else:
+                    job_link = url
+                
+                # Generate stable semantic fingerprint ID
                 extracted_id = create_stable_id("jobbank", title, company, location)
                 
                 # Memory Check Optimization
@@ -86,13 +100,12 @@ def scrape_job_bank_canada(page, search_query, processed_ids):
                     "location": location,
                     "description": f"Live opportunity for a {title} at {company}. Requires technical domain competency matching core industry criteria, technical workflow mapping, structural analysis processing, and cross-functional technology infrastructure orchestration.",
                     "source": "Job Bank Canada",
-                    "url": job_link
+                    "url": job_link # Now populated with the specific /jobposting/ address!
                 })
                 
             print(f"   ├─ Page {current_page}: Added {len(page_new_listings)} new roles ({page_skipped_count} skipped old records).")
             listings.extend(page_new_listings)
             
-            # CHRONOLOGICAL OPTIMIZATION: If every listing on this page is an old record, stop paginating
             if len(articles) > 0 and page_skipped_count == len(articles):
                 print(f"   └─ Catch-up Complete: All entries on Page {current_page} already exist in history logs. Terminating branch.")
                 break
@@ -133,8 +146,6 @@ def scrape_eluta_canada(page, search_query, processed_ids):
             
             for idx, link in enumerate(job_links):
                 title_text = link.get_text(strip=True)
-                
-                # Generate stable fingerprint for Eluta index nodes
                 generated_id = create_stable_id("eluta", title_text, "Regional Enterprise Corporation", "Saint John, NB")
                 
                 if generated_id in processed_ids:
