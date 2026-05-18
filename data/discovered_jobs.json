@@ -1,0 +1,254 @@
+[
+    {
+        "job_id": "linkedin-macro-data-analyst",
+        "title": "Live Search Dashboard: Data Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'data analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=data%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-data-analyst",
+        "title": "Live Search Dashboard: Data Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'data analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=data%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-business-analyst",
+        "title": "Live Search Dashboard: Business Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'business analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=business%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-business-analyst",
+        "title": "Live Search Dashboard: Business Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'business analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=business%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-data-engineer",
+        "title": "Live Search Dashboard: Data Engineer",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'data engineer' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=data%20engineer&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-data-engineer",
+        "title": "Live Search Dashboard: Data Engineer",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'data engineer' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=data%20engineer&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-bi-analyst",
+        "title": "Live Search Dashboard: Bi Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'bi analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=bi%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-bi-analyst",
+        "title": "Live Search Dashboard: Bi Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'bi analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=bi%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-business-intelligence",
+        "title": "Live Search Dashboard: Business Intelligence",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'business intelligence' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=business%20intelligence&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-business-intelligence",
+        "title": "Live Search Dashboard: Business Intelligence",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'business intelligence' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=business%20intelligence&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-analytics-engineer",
+        "title": "Live Search Dashboard: Analytics Engineer",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'analytics engineer' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=analytics%20engineer&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-analytics-engineer",
+        "title": "Live Search Dashboard: Analytics Engineer",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'analytics engineer' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=analytics%20engineer&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-data-scientist",
+        "title": "Live Search Dashboard: Data Scientist",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'data scientist' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=data%20scientist&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-data-scientist",
+        "title": "Live Search Dashboard: Data Scientist",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'data scientist' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=data%20scientist&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-systems-analyst",
+        "title": "Live Search Dashboard: Systems Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'systems analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=systems%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-systems-analyst",
+        "title": "Live Search Dashboard: Systems Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'systems analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=systems%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-cloud-analyst",
+        "title": "Live Search Dashboard: Cloud Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'cloud analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=cloud%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-cloud-analyst",
+        "title": "Live Search Dashboard: Cloud Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'cloud analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=cloud%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-reporting-analyst",
+        "title": "Live Search Dashboard: Reporting Analyst",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'reporting analyst' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=reporting%20analyst&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-reporting-analyst",
+        "title": "Live Search Dashboard: Reporting Analyst",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'reporting analyst' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=reporting%20analyst&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-database-administrator",
+        "title": "Live Search Dashboard: Database Administrator",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'database administrator' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=database%20administrator&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-database-administrator",
+        "title": "Live Search Dashboard: Database Administrator",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'database administrator' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=database%20administrator&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-systems-specialist",
+        "title": "Live Search Dashboard: Systems Specialist",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'systems specialist' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=systems%20specialist&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-systems-specialist",
+        "title": "Live Search Dashboard: Systems Specialist",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'systems specialist' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=systems%20specialist&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-information-technology",
+        "title": "Live Search Dashboard: Information Technology",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'information technology' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=information%20technology&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-information-technology",
+        "title": "Live Search Dashboard: Information Technology",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'information technology' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=information%20technology&l=Saint+John%2C+New+Brunswick"
+    },
+    {
+        "job_id": "linkedin-macro-python",
+        "title": "Live Search Dashboard: Python",
+        "company": "LinkedIn Talent Engine",
+        "location": "Saint John, NB / Remote",
+        "description": "Direct external query monitoring live macro market postings for 'python' roles across the direct region.",
+        "source": "LinkedIn Matrix Link",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=python&location=Saint%20John%20New%20Brunswick"
+    },
+    {
+        "job_id": "indeed-macro-python",
+        "title": "Live Search Dashboard: Python",
+        "company": "Indeed Engine Portal",
+        "location": "Saint John, NB & Remote",
+        "description": "Bypasses standard navigation layers to execute a real-time, deep-link index search for 'python' listings.",
+        "source": "Indeed Aggregator Link",
+        "url": "https://ca.indeed.com/jobs?q=python&l=Saint+John%2C+New+Brunswick"
+    }
+]
