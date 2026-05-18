@@ -6,6 +6,9 @@ on:
     - cron: '0 11 * * 0'
   workflow_dispatch: # Allows you to manually trigger it anytime!
 
+permissions:
+  contents: write # 🔐 CRITICAL FIX: Grants the cloud machine permission to push files back to your repo!
+
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
@@ -41,3 +44,4 @@ jobs:
         git config --local user.name "GitHub Action Bot"
         git add data/qualified_jobs.json data/processed_history.json data/Qualified_Job_Pipeline.xlsx
         git diff --quiet && git diff --staged --quiet || (git commit -m "chore: automated weekly pipeline updates [skip ci]" && git push)
+    
